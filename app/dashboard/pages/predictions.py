@@ -31,12 +31,15 @@ layout = html.Div([
     dbc.Row([
         dbc.Col([
             html.H5("Token Percentiles by Practice"),
-            html.Div(id="percentile-table"),
-        ], md=6),
+            html.Div(id="percentile-table", style={"overflowX": "auto"}),
+        ], md=12),
+    ], className="mb-4"),
+
+    dbc.Row([
         dbc.Col([
             html.H5("Cohort Cost Variance (Practice x Level)"),
-            html.Div(id="cohort-table"),
-        ], md=6),
+            html.Div(id="cohort-table", style={"overflowX": "auto"}),
+        ], md=12),
     ]),
 ])
 
