@@ -11,5 +11,6 @@ scikit-learn
 statsmodels
 scipy
 gunicorn
+fpdf2
 pytest
 httpx

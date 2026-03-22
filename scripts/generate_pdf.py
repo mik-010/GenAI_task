@@ -47,10 +47,10 @@ class SlidesPDF(FPDF):
             self.cell(W - 2 * MARGIN, 8, subtitle, align="L")
         self.set_text_color(*DARK)
 
-    def section_header(self, text, y):
+    def section_header(self, text, y, x=MARGIN):
         self.set_font("Helvetica", "B", 13)
         self.set_text_color(*ACCENT)
-        self.set_xy(MARGIN, y)
+        self.set_xy(x, y)
         self.cell(0, 7, text)
         self.set_text_color(*DARK)
         return y + 9
@@ -254,16 +254,16 @@ def build_pdf():
 
     y = 44
     left_x = MARGIN
-    right_x = MARGIN + 145
+    right_x = MARGIN + 140
 
-    y = pdf.section_header("Anomaly Detection", y)
+    y = pdf.section_header("Anomaly Detection", y, left_x)
     y = pdf.bullet("IQR method on daily cost identified 3 anomalous days exceeding the upper fence", y, left_x + 4)
     y = pdf.bullet("Z-score analysis on daily errors found 4 spike days (> 2 std deviations)", y, left_x + 4)
     y = pdf.bullet("Most error spikes correlate with rate-limit (429) bursts on Opus models", y, left_x + 4)
     y = pdf.bullet("Request-abort errors are the most frequent (52% of all errors)", y, left_x + 4)
 
     y += 4
-    y = pdf.section_header("7-Day Cost Forecast", y)
+    y = pdf.section_header("7-Day Cost Forecast", y, left_x)
     pdf.table(left_x, y, ["Metric", "Value"], [
         ["Method", "OLS + day-of-week seasonality"],
         ["Daily forecast range", "$86 - $104"],
@@ -273,8 +273,7 @@ def build_pdf():
     ], [62, 55])
 
     yr = 44
-    yr = pdf.section_header("Cohort Variance Highlights", yr)
-    pdf.set_xy(right_x, yr)
+    yr = pdf.section_header("Cohort Variance Highlights", yr, right_x)
     pdf.table(right_x, yr, ["Cohort", "Avg Cost", "Std Dev"], [
         ["ML Eng / L5", "$87.20", "$42.15"],
         ["Frontend / L6", "$92.50", "$38.60"],
@@ -284,21 +283,18 @@ def build_pdf():
     ], [48, 25, 25])
 
     yr_after = yr + 52
-    yr_after = pdf.section_header("Recommendations", yr_after)
-    pdf.set_xy(right_x, yr_after)
-    yr_after = pdf.bullet("Monitor Opus cost -- 71% of spend on 42% of", yr_after, right_x + 4)
-    yr_after = pdf.bullet("requests; consider Haiku for suitable tasks", yr_after, right_x + 4)
-    yr_after = pdf.bullet("Investigate rate-limit spikes -- they cluster", yr_after, right_x + 4)
-    yr_after = pdf.bullet("on specific days, suggesting burst patterns", yr_after, right_x + 4)
-    yr_after = pdf.bullet("Track L5-L6 cohort -- highest cost variance", yr_after, right_x + 4)
-    yr_after = pdf.bullet("suggests uneven adoption or usage patterns", yr_after, right_x + 4)
+    yr_after = pdf.section_header("Recommendations", yr_after, right_x)
+    yr_after = pdf.bullet("Monitor Opus cost -- 71% of spend on 42%", yr_after, right_x + 4)
+    yr_after = pdf.bullet("of requests; consider Haiku instead", yr_after, right_x + 4)
+    yr_after = pdf.bullet("Investigate rate-limit spikes -- they", yr_after, right_x + 4)
+    yr_after = pdf.bullet("cluster on specific days (burst patterns)", yr_after, right_x + 4)
+    yr_after = pdf.bullet("Track L5-L6 cohort -- highest cost", yr_after, right_x + 4)
+    yr_after = pdf.bullet("variance suggests uneven adoption", yr_after, right_x + 4)
 
-    y_bottom = 165
-    y_bottom = pdf.section_header("Summary", y_bottom)
-    y_bottom = pdf.bullet(
-        "The platform processes 454K events into actionable dashboards, API endpoints, and predictive models -- "
-        "enabling data-driven decisions on Claude Code usage, cost optimization, and developer productivity.", y_bottom
-    )
+    y_bottom = 168
+    y_bottom = pdf.section_header("Summary", y_bottom, left_x)
+    y_bottom = pdf.bullet("The platform processes 454K events into dashboards, API endpoints, and predictive models,", y_bottom)
+    y_bottom = pdf.bullet("enabling data-driven decisions on Claude Code usage, cost optimization, and productivity.", y_bottom)
 
     pdf.slide_number(5, 5)
 

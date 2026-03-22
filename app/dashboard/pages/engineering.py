@@ -79,9 +79,8 @@ def update_tool_charts(practice):
     # Success rate
     results = df[df["event_name"] == "tool_result"].copy()
     if not results.empty:
-        results["success_rate"] = results["success_count"] / (
-            results["success_count"] + results["failure_count"]
-        ).replace(0, 1) * 100
+        denom = (results["success_count"] + results["failure_count"]).replace(0, 1)
+        results["success_rate"] = results["success_count"] / denom * 100
         success_fig = px.bar(results.sort_values("success_rate"),
                              x="success_rate", y="tool_name", orientation="h",
                              title="Tool Success Rate (%)",
@@ -108,11 +107,11 @@ def update_tool_charts(practice):
     Output("error-breakdown-chart", "figure"),
     Input("eng-practice-filter", "value"),
 )
-def update_error_charts(_):
+def update_error_charts(practice):
     from app.transform.queries import error_rates_daily, error_summary
     try:
-        daily = error_rates_daily()
-        summary = error_summary()
+        daily = error_rates_daily(practice=practice)
+        summary = error_summary(practice=practice)
     except Exception:
         daily, summary = pd.DataFrame(), pd.DataFrame()
 
@@ -137,10 +136,10 @@ def update_error_charts(_):
 
 
 @callback(Output("prompt-dist-chart", "figure"), Input("eng-practice-filter", "value"))
-def update_prompt_dist(_):
+def update_prompt_dist(practice):
     from app.transform.queries import prompt_length_distribution
     try:
-        df = prompt_length_distribution()
+        df = prompt_length_distribution(practice=practice)
     except Exception:
         df = pd.DataFrame()
     if df.empty:
@@ -150,10 +149,10 @@ def update_prompt_dist(_):
 
 
 @callback(Output("leaderboard-table", "children"), Input("eng-practice-filter", "value"))
-def update_leaderboard(_):
+def update_leaderboard(practice):
     from app.transform.queries import user_leaderboard
     try:
-        df = user_leaderboard(limit=15)
+        df = user_leaderboard(limit=15, practice=practice)
     except Exception:
         df = pd.DataFrame()
     if df.empty:

@@ -74,6 +74,8 @@ All Python packages are listed in `requirements.txt`. Here is what each one does
 | `scikit-learn` | Machine learning utilities (used by forecasting pipeline) |
 | `statsmodels` | OLS regression for cost forecasting with day-of-week seasonality |
 | `scipy` | Statistical functions supporting advanced analytics |
+| **Reporting** | |
+| `fpdf2` | Lightweight PDF generation for the insights presentation |
 | **Testing** | |
 | `pytest` | Test framework for unit and integration tests |
 | `httpx` | Async HTTP client used by FastAPI's `TestClient` |

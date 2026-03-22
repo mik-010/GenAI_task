@@ -66,10 +66,16 @@ def parse_event(message_str: str) -> Optional[dict]:
 
     resource = msg.get("resource", {})
 
+    try:
+        event_ts = _parse_ts(attrs["event.timestamp"])
+    except (ValueError, KeyError) as exc:
+        logger.warning("Bad timestamp in event: %s – skipping", exc)
+        return None
+
     base = {
         "event_type": body,
         "event_name": attrs.get("event.name", body.split(".")[-1]),
-        "event_ts": _parse_ts(attrs["event.timestamp"]),
+        "event_ts": event_ts,
         "session_id": attrs["session.id"],
         "user_email": attrs["user.email"],
         "user_id": attrs.get("user.id"),

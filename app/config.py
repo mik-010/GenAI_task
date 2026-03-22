@@ -10,7 +10,6 @@ POSTGRES_USER = os.getenv("POSTGRES_USER", "analytics")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "analytics")
 DATA_DIR = os.getenv("DATA_DIR", "output")
 DASH_PORT = int(os.getenv("DASH_PORT", "8050"))
-API_PORT = int(os.getenv("API_PORT", "8000"))
 
 DATABASE_URL = (
     f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}"

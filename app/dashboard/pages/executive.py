@@ -142,11 +142,14 @@ def update_trends(practice, level):
     return cost_fig, token_fig
 
 
-@callback(Output("cost-by-practice-chart", "figure"), Input("exec-practice-filter", "value"))
-def update_cost_practice(_):
+@callback(
+    Output("cost-by-practice-chart", "figure"),
+    Input("exec-level-filter", "value"),
+)
+def update_cost_practice(level):
     from app.transform.queries import cost_by_practice
     try:
-        df = cost_by_practice()
+        df = cost_by_practice(level=level)
     except Exception:
         df = pd.DataFrame()
     if df.empty:
@@ -154,11 +157,14 @@ def update_cost_practice(_):
     return px.pie(df, values="total_cost", names="practice", title="Cost by Practice", hole=0.4)
 
 
-@callback(Output("cost-by-level-chart", "figure"), Input("exec-level-filter", "value"))
-def update_cost_level(_):
+@callback(
+    Output("cost-by-level-chart", "figure"),
+    Input("exec-practice-filter", "value"),
+)
+def update_cost_level(practice):
     from app.transform.queries import cost_by_level
     try:
-        df = cost_by_level()
+        df = cost_by_level(practice=practice)
     except Exception:
         df = pd.DataFrame()
     if df.empty:
@@ -191,10 +197,10 @@ def update_peak(_practice):
 
 
 @callback(Output("model-efficiency-chart", "figure"), Input("exec-practice-filter", "value"))
-def update_model_eff(_):
+def update_model_eff(practice):
     from app.transform.queries import model_efficiency
     try:
-        df = model_efficiency()
+        df = model_efficiency(practice=practice)
     except Exception:
         df = pd.DataFrame()
     if df.empty:

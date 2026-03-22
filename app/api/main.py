@@ -116,11 +116,14 @@ def forecast_endpoint(periods: int = Query(7, ge=1, le=60)):
 
 
 @app.get("/metrics/kpi")
-def kpi_endpoint():
-    """High-level KPI summary."""
+def kpi_endpoint(
+    practice: Optional[str] = Query(None),
+    level: Optional[str] = Query(None),
+):
+    """High-level KPI summary with optional practice & level filter."""
     from app.transform.queries import kpi_summary
     try:
-        return kpi_summary()
+        return kpi_summary(practice=practice, level=level)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 

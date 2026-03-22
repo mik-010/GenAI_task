@@ -6,7 +6,7 @@ import time
 from typing import Optional
 
 from app.config import DATA_DIR
-from app.ingestion.parser import iter_events_from_jsonl, parse_event
+from app.ingestion.parser import parse_event
 from app.ingestion.loader import load_events, refresh_views
 
 logger = logging.getLogger(__name__)

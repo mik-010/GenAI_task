@@ -3,7 +3,6 @@
 import csv
 import json
 import logging
-from datetime import datetime, timezone
 
 from sqlalchemy import text
 

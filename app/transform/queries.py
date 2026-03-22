@@ -46,27 +46,33 @@ def daily_usage_trends(practice: Optional[str] = None, level: Optional[str] = No
     """, params)
 
 
-def cost_by_practice() -> pd.DataFrame:
-    return _read("""
+def cost_by_practice(level: Optional[str] = None) -> pd.DataFrame:
+    where = "WHERE level = :level" if level else ""
+    params = {"level": level} if level else {}
+    return _read(f"""
         SELECT practice,
                SUM(total_cost) AS total_cost,
                SUM(request_count) AS total_requests,
                SUM(total_input_tokens + total_output_tokens) AS total_tokens
         FROM mv_daily_usage
+        {where}
         GROUP BY practice
         ORDER BY total_cost DESC
-    """)
+    """, params)
 
 
-def cost_by_level() -> pd.DataFrame:
-    return _read("""
+def cost_by_level(practice: Optional[str] = None) -> pd.DataFrame:
+    where = "WHERE practice = :practice" if practice else ""
+    params = {"practice": practice} if practice else {}
+    return _read(f"""
         SELECT level,
                SUM(total_cost) AS total_cost,
                SUM(request_count) AS total_requests
         FROM mv_daily_usage
+        {where}
         GROUP BY level
         ORDER BY level
-    """)
+    """, params)
 
 
 # ------------------------------------------------------------------
@@ -111,22 +117,55 @@ def tool_behavior(practice: Optional[str] = None) -> pd.DataFrame:
     """, params)
 
 
-def tool_usage_over_time() -> pd.DataFrame:
-    return _read("""
-        SELECT date_trunc('day', event_ts)::date AS day,
-               tool_name,
+def tool_usage_over_time(practice: Optional[str] = None, tool: Optional[str] = None) -> pd.DataFrame:
+    where_clauses = []
+    params: dict = {}
+    join = ""
+    if practice:
+        join = "JOIN employees_dim e ON e.email = tu.user_email"
+        where_clauses.append("e.practice = :practice")
+        params["practice"] = practice
+    if tool:
+        where_clauses.append("tu.tool_name = :tool")
+        params["tool"] = tool
+    where = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+    return _read(f"""
+        SELECT date_trunc('day', tu.event_ts)::date AS day,
+               tu.tool_name,
                COUNT(*) AS usage_count
-        FROM tool_usage_fact
+        FROM tool_usage_fact tu
+        {join}
+        {where}
         GROUP BY 1, 2
         ORDER BY 1, 2
-    """)
+    """, params)
 
 
 # ------------------------------------------------------------------
 # Model efficiency
 # ------------------------------------------------------------------
 
-def model_efficiency() -> pd.DataFrame:
+def model_efficiency(practice: Optional[str] = None) -> pd.DataFrame:
+    if practice:
+        return _read("""
+            SELECT ar.model,
+                   COUNT(*) AS request_count,
+                   AVG(ar.cost_usd) AS avg_cost,
+                   AVG(ar.duration_ms) AS avg_duration_ms,
+                   AVG(ar.output_tokens) AS avg_output_tokens,
+                   SUM(ar.cost_usd) AS total_cost,
+                   CASE WHEN SUM(ar.cost_usd) > 0
+                        THEN SUM(ar.output_tokens) / SUM(ar.cost_usd)
+                        ELSE 0 END AS tokens_per_dollar,
+                   CASE WHEN SUM(ar.duration_ms) > 0
+                        THEN SUM(ar.output_tokens) * 1000.0 / SUM(ar.duration_ms)
+                        ELSE 0 END AS tokens_per_sec
+            FROM api_requests_fact ar
+            JOIN employees_dim e ON e.email = ar.user_email
+            WHERE e.practice = :practice
+            GROUP BY ar.model
+            ORDER BY total_cost DESC
+        """, {"practice": practice})
     return _read("""
         SELECT model, request_count, avg_cost, avg_duration_ms,
                avg_output_tokens, total_cost,
@@ -140,7 +179,18 @@ def model_efficiency() -> pd.DataFrame:
 # Error rates
 # ------------------------------------------------------------------
 
-def error_rates_daily() -> pd.DataFrame:
+def error_rates_daily(practice: Optional[str] = None) -> pd.DataFrame:
+    if practice:
+        return _read("""
+            SELECT date_trunc('day', ae.event_ts)::date AS day,
+                   ae.model, ae.status_code,
+                   COUNT(*) AS error_count
+            FROM api_errors_fact ae
+            JOIN employees_dim e ON e.email = ae.user_email
+            WHERE e.practice = :practice
+            GROUP BY 1, 2, 3
+            ORDER BY 1
+        """, {"practice": practice})
     return _read("""
         SELECT day, model, status_code, error_count
         FROM mv_error_rates
@@ -148,7 +198,17 @@ def error_rates_daily() -> pd.DataFrame:
     """)
 
 
-def error_summary() -> pd.DataFrame:
+def error_summary(practice: Optional[str] = None) -> pd.DataFrame:
+    if practice:
+        return _read("""
+            SELECT ae.model, ae.status_code,
+                   COUNT(*) AS total_errors
+            FROM api_errors_fact ae
+            JOIN employees_dim e ON e.email = ae.user_email
+            WHERE e.practice = :practice
+            GROUP BY ae.model, ae.status_code
+            ORDER BY total_errors DESC
+        """, {"practice": practice})
     return _read("""
         SELECT model, status_code,
                SUM(error_count) AS total_errors
@@ -162,21 +222,28 @@ def error_summary() -> pd.DataFrame:
 # Session / user stats
 # ------------------------------------------------------------------
 
-def session_stats() -> pd.DataFrame:
-    return _read("""
+def session_stats(practice: Optional[str] = None) -> pd.DataFrame:
+    where = "WHERE e.practice = :practice" if practice else ""
+    params = {"practice": practice} if practice else {}
+    return _read(f"""
         SELECT e.practice, e.level,
                COUNT(DISTINCT ef.session_id) AS sessions,
                COUNT(DISTINCT ef.user_email) AS users,
                COUNT(*) AS total_events
         FROM events_fact ef
         JOIN employees_dim e ON e.email = ef.user_email
+        {where}
         GROUP BY e.practice, e.level
         ORDER BY total_events DESC
-    """)
+    """, params)
 
 
-def user_leaderboard(limit: int = 20) -> pd.DataFrame:
-    return _read("""
+def user_leaderboard(limit: int = 20, practice: Optional[str] = None) -> pd.DataFrame:
+    where = "WHERE e.practice = :practice" if practice else ""
+    params: dict = {"limit": limit}
+    if practice:
+        params["practice"] = practice
+    return _read(f"""
         SELECT ar.user_email, e.full_name, e.practice, e.level,
                COUNT(*) AS requests,
                SUM(ar.cost_usd) AS total_cost,
@@ -184,32 +251,38 @@ def user_leaderboard(limit: int = 20) -> pd.DataFrame:
                COUNT(DISTINCT ar.session_id) AS sessions
         FROM api_requests_fact ar
         JOIN employees_dim e ON e.email = ar.user_email
+        {where}
         GROUP BY ar.user_email, e.full_name, e.practice, e.level
         ORDER BY total_cost DESC
         LIMIT :limit
-    """, {"limit": limit})
+    """, params)
 
 
 # ------------------------------------------------------------------
 # Prompt stats
 # ------------------------------------------------------------------
 
-def prompt_length_distribution() -> pd.DataFrame:
-    return _read("""
+def prompt_length_distribution(practice: Optional[str] = None) -> pd.DataFrame:
+    join = "JOIN employees_dim e ON e.email = up.user_email" if practice else ""
+    where = "WHERE e.practice = :practice" if practice else ""
+    params = {"practice": practice} if practice else {}
+    return _read(f"""
         SELECT
             CASE
-                WHEN prompt_length < 50 THEN '0-49'
-                WHEN prompt_length < 200 THEN '50-199'
-                WHEN prompt_length < 500 THEN '200-499'
-                WHEN prompt_length < 1000 THEN '500-999'
-                WHEN prompt_length < 3000 THEN '1000-2999'
+                WHEN up.prompt_length < 50 THEN '0-49'
+                WHEN up.prompt_length < 200 THEN '50-199'
+                WHEN up.prompt_length < 500 THEN '200-499'
+                WHEN up.prompt_length < 1000 THEN '500-999'
+                WHEN up.prompt_length < 3000 THEN '1000-2999'
                 ELSE '3000+'
             END AS bucket,
             COUNT(*) AS count
-        FROM user_prompts_fact
+        FROM user_prompts_fact up
+        {join}
+        {where}
         GROUP BY 1
-        ORDER BY MIN(prompt_length)
-    """)
+        ORDER BY MIN(up.prompt_length)
+    """, params)
 
 
 # ------------------------------------------------------------------

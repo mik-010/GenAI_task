@@ -115,18 +115,19 @@ def export_csv(n_clicks, practice, level):
     return dcc.send_data_frame(df.to_csv, "claude_analytics_export.csv", index=False)
 
 
-@callback(Output("an-tool-timeline", "figure"), Input("an-tool", "value"))
-def update_tool_timeline(tool):
+@callback(
+    Output("an-tool-timeline", "figure"),
+    Input("an-practice", "value"),
+    Input("an-tool", "value"),
+)
+def update_tool_timeline(practice, tool):
     from app.transform.queries import tool_usage_over_time
     try:
-        df = tool_usage_over_time()
+        df = tool_usage_over_time(practice=practice, tool=tool)
     except Exception:
         df = pd.DataFrame()
     if df.empty:
         return go.Figure().update_layout(title="No data")
-
-    if tool:
-        df = df[df["tool_name"] == tool]
 
     fig = px.line(df, x="day", y="usage_count", color="tool_name",
                   title="Tool Usage Over Time",
@@ -135,10 +136,10 @@ def update_tool_timeline(tool):
 
 
 @callback(Output("an-session-scatter", "figure"), Input("an-practice", "value"))
-def update_session_scatter(_):
+def update_session_scatter(practice):
     from app.transform.queries import session_stats
     try:
-        df = session_stats()
+        df = session_stats(practice=practice)
     except Exception:
         df = pd.DataFrame()
     if df.empty:

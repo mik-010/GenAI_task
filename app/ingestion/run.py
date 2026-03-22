@@ -29,32 +29,36 @@ def main():
         logger.error("Run 'python3 generate_fake_data.py' first to create the data.")
         sys.exit(1)
 
-    # 1. Load employees
-    if os.path.exists(employees_path):
-        logger.info("Loading employees from %s", employees_path)
-        emp_count = load_employees(employees_path)
-        logger.info("Employees loaded: %d", emp_count)
-    else:
-        logger.warning("Employee file not found: %s – skipping", employees_path)
+    try:
+        # 1. Load employees
+        if os.path.exists(employees_path):
+            logger.info("Loading employees from %s", employees_path)
+            emp_count = load_employees(employees_path)
+            logger.info("Employees loaded: %d", emp_count)
+        else:
+            logger.warning("Employee file not found: %s – skipping", employees_path)
 
-    # 2. Load telemetry events
-    logger.info("Parsing telemetry from %s", telemetry_path)
-    events = iter_events_from_jsonl(telemetry_path)
-    result = load_events(events, batch_size=args.batch_size)
-    logger.info("Ingestion complete — ok=%d  failed=%d", result["ok"], result["failed"])
+        # 2. Load telemetry events
+        logger.info("Parsing telemetry from %s", telemetry_path)
+        events = iter_events_from_jsonl(telemetry_path)
+        result = load_events(events, batch_size=args.batch_size)
+        logger.info("Ingestion complete — ok=%d  failed=%d", result["ok"], result["failed"])
 
-    record_ingestion(
-        file_name=telemetry_path,
-        total=result["ok"] + result["failed"],
-        ok=result["ok"],
-        failed=result["failed"],
-    )
+        record_ingestion(
+            file_name=telemetry_path,
+            total=result["ok"] + result["failed"],
+            ok=result["ok"],
+            failed=result["failed"],
+        )
 
-    # 3. Refresh materialized views
-    logger.info("Refreshing materialized views...")
-    refresh_views()
+        # 3. Refresh materialized views
+        logger.info("Refreshing materialized views...")
+        refresh_views()
 
-    logger.info("Done.")
+        logger.info("Done.")
+    except Exception:
+        logger.exception("Ingestion pipeline failed")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
