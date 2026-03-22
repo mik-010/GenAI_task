@@ -1,0 +1,15 @@
+psycopg2-binary
+sqlalchemy
+pandas
+dash
+dash-bootstrap-components
+plotly
+fastapi
+uvicorn[standard]
+python-dotenv
+scikit-learn
+statsmodels
+scipy
+gunicorn
+pytest
+httpx
