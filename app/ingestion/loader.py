@@ -181,9 +181,9 @@ def load_events(events, batch_size: int = 500) -> dict:
         nonlocal ok, failed
         with engine.begin() as conn:
             for event in batch:
+                savepoint = conn.begin_nested()
                 try:
                     event_id = _insert_event(conn, event)
-                    etype = event["event_type"]
                     if "api_request" in event:
                         _insert_api_request(conn, event_id, event)
                     if "tool_usage" in event:
@@ -192,8 +192,10 @@ def load_events(events, batch_size: int = 500) -> dict:
                         _insert_api_error(conn, event_id, event)
                     if "user_prompt" in event:
                         _insert_user_prompt(conn, event_id, event)
+                    savepoint.commit()
                     ok += 1
                 except Exception:
+                    savepoint.rollback()
                     logger.exception("Failed to insert event")
                     failed += 1
 

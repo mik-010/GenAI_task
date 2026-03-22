@@ -84,11 +84,12 @@ def load_filter_options(_):
 @callback(
     Output("kpi-cards", "children"),
     Input("exec-practice-filter", "value"),
+    Input("exec-level-filter", "value"),
 )
-def update_kpis(_practice):
+def update_kpis(practice, level):
     from app.transform.queries import kpi_summary
     try:
-        kpi = kpi_summary()
+        kpi = kpi_summary(practice=practice, level=level)
     except Exception:
         kpi = {}
     cards = [

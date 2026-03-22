@@ -216,17 +216,32 @@ def prompt_length_distribution() -> pd.DataFrame:
 # KPI summary (for top-bar cards)
 # ------------------------------------------------------------------
 
-def kpi_summary() -> dict:
-    df = _read("""
+def kpi_summary(practice: Optional[str] = None, level: Optional[str] = None) -> dict:
+    where_clauses = []
+    params: dict = {}
+    join = ""
+    if practice or level:
+        join = "JOIN employees_dim e ON e.email = ar.user_email"
+        if practice:
+            where_clauses.append("e.practice = :practice")
+            params["practice"] = practice
+        if level:
+            where_clauses.append("e.level = :level")
+            params["level"] = level
+    where = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+    df = _read(f"""
         SELECT
             COUNT(*)                        AS total_requests,
-            SUM(cost_usd)                   AS total_cost,
-            SUM(input_tokens + output_tokens) AS total_tokens,
-            COUNT(DISTINCT session_id)      AS total_sessions,
-            COUNT(DISTINCT user_email)      AS total_users,
-            AVG(duration_ms)                AS avg_latency_ms
-        FROM api_requests_fact
-    """)
+            SUM(ar.cost_usd)                AS total_cost,
+            SUM(ar.input_tokens + ar.output_tokens) AS total_tokens,
+            COUNT(DISTINCT ar.session_id)   AS total_sessions,
+            COUNT(DISTINCT ar.user_email)   AS total_users,
+            AVG(ar.duration_ms)             AS avg_latency_ms
+        FROM api_requests_fact ar
+        {join}
+        {where}
+    """, params)
     return df.iloc[0].to_dict() if len(df) else {}
 
 
