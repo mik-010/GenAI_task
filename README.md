@@ -49,7 +49,34 @@ generate_fake_data.py  ──►  output/telemetry_logs.jsonl
 
 ### Prerequisites
 - Python 3.8+
-- Docker (for PostgreSQL)
+- Docker (for PostgreSQL) or a local PostgreSQL 14+ installation
+
+### Dependencies
+
+All Python packages are listed in `requirements.txt`. Here is what each one does:
+
+| Package | Role |
+|---------|------|
+| **Core** | |
+| `psycopg2-binary` | PostgreSQL adapter for Python |
+| `sqlalchemy` | SQL toolkit and ORM; provides the database engine and connection pooling |
+| `pandas` | DataFrame-based data manipulation for analytics and query results |
+| `python-dotenv` | Loads `.env` configuration into environment variables |
+| **Dashboard** | |
+| `dash` | Plotly Dash framework for building the interactive web dashboard |
+| `dash-bootstrap-components` | Bootstrap-styled UI components (cards, navs, tables) |
+| `plotly` | Interactive charting library used by Dash |
+| **API** | |
+| `fastapi` | High-performance REST API framework |
+| `uvicorn[standard]` | ASGI server to run FastAPI |
+| `gunicorn` | Production-grade WSGI/ASGI process manager |
+| **ML / Statistics** | |
+| `scikit-learn` | Machine learning utilities (used by forecasting pipeline) |
+| `statsmodels` | OLS regression for cost forecasting with day-of-week seasonality |
+| `scipy` | Statistical functions supporting advanced analytics |
+| **Testing** | |
+| `pytest` | Test framework for unit and integration tests |
+| `httpx` | Async HTTP client used by FastAPI's `TestClient` |
 
 ### 1. Install dependencies
 ```bash
@@ -237,6 +264,10 @@ This watches `output/telemetry_logs.jsonl` for new lines, ingests them, and refr
     ├── telemetry_logs.jsonl
     └── employees.csv
 ```
+
+## LLM Usage Log
+
+I used Cursor for doing this assignment, more specifically, first thing was to use the Plan feature in Cursor to plan the steps for the assignment, and used the provided PDF document and the telemetry folder. I instructed it to read through the telemetry folder and then to start the first three points of the PDF to have a good prompt of the assignment, and simultaneously not to overload it with more points(starting from 4 in the PDF). After the planning phase, in which I chose the stack for the assignment and gathered all other necessary information not mentioned in the first prompt, I instructed it to build the project using Claude's Opus 4.6, as it is the most powerful model Claude has as of today. After all the building and running stages worked without issues, I did something the evaluator of this assignment will do after reviewing UI and not seeing any interactive issues that I thought of(giving the repo files to LLM and asking what issues it can outline). So, I used the Cursor's ask feature to ask the same question, and got some flags, 3 flags that could be outlined, and did the planning/building cycle to solve that.
 
 ## Notes
 
